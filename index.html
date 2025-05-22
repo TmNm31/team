@@ -4,18 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>진주 버스 앱</title>
-
-  <!-- 앱 아이콘과 이름, 전체화면 모드 지정하는 manifest 연결 -->
-  <link rel="manifest" href="manifest.json" />
-  
-  <!-- 상태바 색상 지정 -->
-  <meta name="theme-color" content="#000000" />
-  <!-- iOS용 웹앱 전체화면 설정 -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <!-- iOS 홈 화면 아이콘 -->
-  <link rel="apple-touch-icon" href="icon-192.png" />
-
   <style>
     * {
       box-sizing: border-box;
@@ -25,21 +13,20 @@
       margin: 0;
       padding: 0;
       background-color: #f4f4f4;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      /* flex 정렬 제거 */
     }
     #app {
-      width: 360px;
-      height: 780px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      width: 100vw;           /* 화면 전체 너비 */
+      max-width: 400px;       /* 최대 너비 */
+      height: 100vh;          /* 화면 전체 높이 */
+      max-height: 780px;      /* 최대 높이 */
+      margin: 0 auto;         /* 가로 중앙 정렬 */
       padding: 10px;
       background: white;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;       /* 세로 스크롤 가능 */
     }
     .screen {
       display: none;
@@ -89,6 +76,10 @@
       color: #333;
     }
   </style>
+
+  <!-- manifest 경로 절대 경로로 변경 -->
+  <link rel="manifest" href="/team/manifest.json" />
+  <meta name="theme-color" content="#000000" />
 </head>
 <body>
   <div id="app">
@@ -289,105 +280,78 @@
         "개양오거리",
         "가좌주공3단지",
         "센트럴웰가아파트",
-        "시티프라자",
-        "사대부고등학교/남부초등학교",
-        "진주교대",
-        "탑마트",
-        "진주시청/시청역사",
+        "시티프라디움1차아파트/무듬산",
         "진주역",
-        "경상대학교",
+        "데시앙",
+        "진주역철길밑",
+        "죽봉입구",
+        "새동네",
+        "고미사거리",
+        "봉동",
+        "내계",
+        "봉전입구",
+        "봉전",
+        "봉전경로회관",
+        "봉전종점",
+      ],
+      "904": [
+        "진주시외터미널",
+        "진주역",
+        "시티프라디움1차/무듬산",
+        "사천공항",
+        "우주항공청",
+        "사천공항",
+        "진주역",
+        "진주시외버스터미널",
       ],
     };
+    let currentScreen = 1;
+    let currentBus = null;
+    let busPositions = {};
+    let busPassengers = {};
 
-    let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-
-    function saveFavorites() {
-      localStorage.setItem("favorites", JSON.stringify(favorites));
-    }
-
-    function isFavorite(busNum) {
-      return favorites.includes(busNum);
-    }
-
-    function toggleFavorite(busNum) {
-      if (isFavorite(busNum)) {
-        favorites = favorites.filter((b) => b !== busNum);
-      } else {
-        favorites.push(busNum);
+    function goToScreen(screen) {
+      document.getElementById(`screen${currentScreen}`).classList.remove("active");
+      document.getElementById(`screen${screen}`).classList.add("active");
+      currentScreen = screen;
+      if (screen === 3 && currentBus) {
+        showRoute(currentBus);
       }
-      saveFavorites();
-      renderFavorites();
-      renderBusList();
-    }
-
-    function renderBusList() {
-      const busListDiv = document.getElementById("busList");
-      busListDiv.innerHTML = "";
-      const searchValue = document.getElementById("search").value.trim();
-      const filteredBusNums = Object.keys(buses).filter((num) =>
-        num.includes(searchValue)
-      );
-      filteredBusNums.forEach((num) => {
-        const busItem = document.createElement("div");
-        busItem.className = "bus-item";
-        busItem.textContent = `버스번호: ${num}`;
-        // 즐겨찾기 버튼
-        const favBtn = document.createElement("button");
-        favBtn.textContent = isFavorite(num) ? "★ 즐겨찾기 해제" : "☆ 즐겨찾기";
-        favBtn.style.marginLeft = "10px";
-        favBtn.onclick = (e) => {
-          e.stopPropagation();
-          toggleFavorite(num);
-        };
-        busItem.appendChild(favBtn);
-
-        busItem.onclick = () => showRoute(num);
-        busListDiv.appendChild(busItem);
-      });
-    }
-
-    function renderFavorites() {
-      const favDiv = document.getElementById("favorites");
-      favDiv.innerHTML = "<h3>즐겨찾기</h3>";
-      if (favorites.length === 0) {
-        favDiv.innerHTML += "<p>즐겨찾기가 없습니다.</p>";
-        return;
-      }
-      favorites.forEach((num) => {
-        const favItem = document.createElement("div");
-        favItem.className = "bus-item";
-        favItem.textContent = `버스번호: ${num}`;
-        favItem.onclick = () => showRoute(num);
-        favDiv.appendChild(favItem);
-      });
     }
 
     function filterBuses() {
-      renderBusList();
+      const input = document.getElementById("search").value.trim();
+      const busList = document.getElementById("busList");
+      busList.innerHTML = "";
+      if (input.length === 0) return;
+      const filteredBuses = Object.keys(buses).filter((busNum) =>
+        busNum.includes(input)
+      );
+      filteredBuses.forEach((busNum) => {
+        const div = document.createElement("div");
+        div.className = "bus-item";
+        div.textContent = `버스 번호 ${busNum}`;
+        div.onclick = () => {
+          currentBus = busNum;
+          goToScreen(3);
+        };
+        busList.appendChild(div);
+      });
     }
 
     function showRoute(busNum) {
       const routeDiv = document.getElementById("routeDisplay");
-      routeDiv.innerHTML = `<h3>버스 ${busNum} 노선</h3>`;
-      buses[busNum].forEach((station) => {
-        const stationDiv = document.createElement("div");
-        stationDiv.className = "station";
-        stationDiv.textContent = station;
-        routeDiv.appendChild(stationDiv);
+      routeDiv.innerHTML = "";
+      const stops = buses[busNum];
+      stops.forEach((stop, index) => {
+        const div = document.createElement("div");
+        div.className = "station";
+        div.textContent = stop;
+        routeDiv.appendChild(div);
       });
-      goToScreen(3);
     }
 
-    function goToScreen(num) {
-      document.querySelectorAll(".screen").forEach((screen) => {
-        screen.classList.remove("active");
-      });
-      document.getElementById(`screen${num}`).classList.add("active");
-    }
-
-    // 초기 렌더링
-    renderBusList();
-    renderFavorites();
+    // 즐겨찾기 예시 (비어있음, 필요하면 추가 가능)
   </script>
 </body>
 </html>
