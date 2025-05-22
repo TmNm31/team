@@ -1,9 +1,21 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>진주 버스 앱</title>
+
+  <!-- 앱 아이콘과 이름, 전체화면 모드 지정하는 manifest 연결 -->
+  <link rel="manifest" href="manifest.json" />
+  
+  <!-- 상태바 색상 지정 -->
+  <meta name="theme-color" content="#000000" />
+  <!-- iOS용 웹앱 전체화면 설정 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <!-- iOS 홈 화면 아이콘 -->
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
   <style>
     * {
       box-sizing: border-box;
@@ -53,13 +65,15 @@
       cursor: pointer;
       margin: 5px;
     }
-    .bus-list, .route {
+    .bus-list,
+    .route {
       width: 90%;
       margin: 10px 0;
       max-height: 300px;
       overflow-y: auto;
     }
-    .bus-item, .station {
+    .bus-item,
+    .station {
       background: white;
       padding: 10px;
       border: 1px solid #ccc;
@@ -75,10 +89,6 @@
       color: #333;
     }
   </style>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-
-
 </head>
 <body>
   <div id="app">
@@ -87,7 +97,12 @@
     </div>
 
     <div id="screen2" class="screen">
-      <input id="search" class="search-bar" placeholder="버스 번호 입력" oninput="filterBuses()">
+      <input
+        id="search"
+        class="search-bar"
+        placeholder="버스 번호 입력"
+        oninput="filterBuses()"
+      />
       <div class="bus-list" id="busList"></div>
       <div class="bus-list" id="favorites"></div>
       <button class="button" onclick="goToScreen(1)">뒤로가기</button>
@@ -100,96 +115,279 @@
   </div>
 
   <script>
-
     const buses = {
-        "1": ["반성터미널", "시정", "진주외국어고등학교/반성시장", "구리/반성시장", "반성초등학교/남평", "개암", "경상남도수목원", "오동입구", "대천", "이반성교차로", "상촌/중촌", "모곡", "이반성면사무소", "이반성초등학교", "삼거", "평촌교회", "중도", "검정사거리", "검정", "장안", "진안", "새밭골", "동촌", "서촌", "서촌경로당", "이반성보건소지소", "이반성면사무소", "모곡", "상촌/중촌", "이반성교차로", "대천", "경상남도수목원", "개암", "반성초등학교/남평", "구리/반성시장", "진주외국어고등학교/반성시장", "시정", "일반성면사무소", "반성터미널"],
-      "2": ["반성터미널", "수목원 방면시정", "수목원 방면진주외국어고등학교/반성시장", "수목원 방면구리/반성시장", "수목원 방면반성초등학교/남평", "수목원 방면개암", "경상남도수목원", "경상남도수목원주차장", "양전", "답천", "상남", "금야", "남산", "남산회관", "남영화학", "대사입구", "두소회관", "두소1", "두소", "장곡", "장곡경로당", "내촌", "운천삼거리", "원당", "반성역", "운천", "포실", "도장입구", "일반성면사무소", "반성터미널"],
-      "3": ["반성터미널", "반성중학교", "다무", "다무경로회관", "중촌", "죽항", "사봉삼거리", "진주동부요양원", "방촌", "등건", "남마성경로회관", "남마성", "시곡", "북마성경로회관", "북마성", "대필동", "필동삼거리/대필동", "세곡", "지수초등학교", "송정삼거리", "송정", "소리골", "구절", "지수삼거리/지수중학교", "지수삼거리", "지수면사무소", "지수파출소", "덕암", "마실", "청담삼거리", "청담", "무등하우스단지", "무등", "무등종점", "무등하우스단지", "청담", "청담삼거리", "마실", "덕암", "지수면사무소", "상동", "지수삼거리", "청원입구", "하촌", "거곡경로회관", "거곡", "봉대삼거리", "봉대", "사동", "사봉면사무소/사봉초등학교", "우곡", "진등", "사봉삼거리", "죽항", "중촌", "다무경로회관", "다무", "반성중학교", "반성터미널"],
-      "131": ["진양호차고지/경해여자고등학교", "진양호삼거리", "평거초등학교", "판문현대아파트", "퀸즈웰가아파트", "판문동행정복지센터", "휴먼시아4단지/평거주공2단지", "휴먼시아3단지/평거주공1단지", "10호광장/들말한보아파트", "들말대경아파트", "신안주공아파트", "법원/평거현대아파트", "신안초등학교/진주여자중학교", "진주교육대학교", "신안학생체육관", "이현상가/동양주택", "오죽광장", "서부농협하나로마트", "진주보건대학교/경진고등학교", "상봉아파트", "진주여자고등학교사거리", "진주여자고등학교", "상봉현장민원실", "갤러리아백화점", "중앙시장(우리은행)", "농협중앙지점", "포시즌", "천전시장", "진주세무서", "진주남중학교/제일병원", "한주럭키타운아파트", "세란병원", "금호석류/은빛한보아파트", "연암공과대학교", "가좌주공아파트", "개양오거리", "가좌주공3단지", "센트럴웰가아파트", "시티프라디움1차아파트/무듬산", "진주역", "데시앙", "진주역철길밑", "죽봉입구", "새동네", "고미사거리", "봉동", "내계", "봉전입구", "봉전", "봉전경로회관", "봉전종점"],
-      "904": ["진주시외터미널", "진주역", "시티프라디움1차/무듬산", "사천공항", "우주항공청", "사천공항", "진주역", "진주시외버스터미널"]
-    
-    
+      "1": [
+        "반성터미널",
+        "시정",
+        "진주외국어고등학교/반성시장",
+        "구리/반성시장",
+        "반성초등학교/남평",
+        "개암",
+        "경상남도수목원",
+        "오동입구",
+        "대천",
+        "이반성교차로",
+        "상촌/중촌",
+        "모곡",
+        "이반성면사무소",
+        "이반성초등학교",
+        "삼거",
+        "평촌교회",
+        "중도",
+        "검정사거리",
+        "검정",
+        "장안",
+        "진안",
+        "새밭골",
+        "동촌",
+        "서촌",
+        "서촌경로당",
+        "이반성보건소지소",
+        "이반성면사무소",
+        "모곡",
+        "상촌/중촌",
+        "이반성교차로",
+        "대천",
+        "경상남도수목원",
+        "개암",
+        "반성초등학교/남평",
+        "구리/반성시장",
+        "진주외국어고등학교/반성시장",
+        "시정",
+        "일반성면사무소",
+        "반성터미널",
+      ],
+      "2": [
+        "반성터미널",
+        "수목원 방면시정",
+        "수목원 방면진주외국어고등학교/반성시장",
+        "수목원 방면구리/반성시장",
+        "수목원 방면반성초등학교/남평",
+        "수목원 방면개암",
+        "경상남도수목원",
+        "경상남도수목원주차장",
+        "양전",
+        "답천",
+        "상남",
+        "금야",
+        "남산",
+        "남산회관",
+        "남영화학",
+        "대사입구",
+        "두소회관",
+        "두소1",
+        "두소",
+        "장곡",
+        "장곡경로당",
+        "내촌",
+        "운천삼거리",
+        "원당",
+        "반성역",
+        "운천",
+        "포실",
+        "도장입구",
+        "일반성면사무소",
+        "반성터미널",
+      ],
+      "3": [
+        "반성터미널",
+        "반성중학교",
+        "다무",
+        "다무경로회관",
+        "중촌",
+        "죽항",
+        "사봉삼거리",
+        "진주동부요양원",
+        "방촌",
+        "등건",
+        "남마성경로회관",
+        "남마성",
+        "시곡",
+        "북마성경로회관",
+        "북마성",
+        "대필동",
+        "필동삼거리/대필동",
+        "세곡",
+        "지수초등학교",
+        "송정삼거리",
+        "송정",
+        "소리골",
+        "구절",
+        "지수삼거리/지수중학교",
+        "지수삼거리",
+        "지수면사무소",
+        "지수파출소",
+        "덕암",
+        "마실",
+        "청담삼거리",
+        "청담",
+        "무등하우스단지",
+        "무등",
+        "무등종점",
+        "무등하우스단지",
+        "청담",
+        "청담삼거리",
+        "마실",
+        "덕암",
+        "지수면사무소",
+        "상동",
+        "지수삼거리",
+        "청원입구",
+        "하촌",
+        "거곡경로회관",
+        "거곡",
+        "봉대삼거리",
+        "봉대",
+        "사동",
+        "사봉면사무소/사봉초등학교",
+        "우곡",
+        "진등",
+        "사봉삼거리",
+        "죽항",
+        "중촌",
+        "다무경로회관",
+        "다무",
+        "반성중학교",
+        "반성터미널",
+      ],
+      "131": [
+        "진양호차고지/경해여자고등학교",
+        "진양호삼거리",
+        "평거초등학교",
+        "판문현대아파트",
+        "퀸즈웰가아파트",
+        "판문동행정복지센터",
+        "휴먼시아4단지/평거주공2단지",
+        "휴먼시아3단지/평거주공1단지",
+        "10호광장/들말한보아파트",
+        "들말대경아파트",
+        "신안주공아파트",
+        "법원/평거현대아파트",
+        "신안초등학교/진주여자중학교",
+        "진주교육대학교",
+        "신안학생체육관",
+        "이현상가/동양주택",
+        "오죽광장",
+        "서부농협하나로마트",
+        "진주보건대학교/경진고등학교",
+        "상봉아파트",
+        "진주여자고등학교사거리",
+        "진주여자고등학교",
+        "상봉현장민원실",
+        "갤러리아백화점",
+        "중앙시장(우리은행)",
+        "농협중앙지점",
+        "포시즌",
+        "천전시장",
+        "진주세무서",
+        "진주남중학교/제일병원",
+        "한주럭키타운아파트",
+        "세란병원",
+        "금호석류/은빛한보아파트",
+        "연암공과대학교",
+        "가좌주공아파트",
+        "개양오거리",
+        "가좌주공3단지",
+        "센트럴웰가아파트",
+        "시티프라자",
+        "사대부고등학교/남부초등학교",
+        "진주교대",
+        "탑마트",
+        "진주시청/시청역사",
+        "진주역",
+        "경상대학교",
+      ],
     };
-    let currentScreen = 1;
-    let currentBus = null;
-    let busPositions = {};
-    let busPassengers = {};
 
-    function goToScreen(screen) {
-      document.getElementById(`screen${currentScreen}`).classList.remove('active');
-      document.getElementById(`screen${screen}`).classList.add('active');
-      currentScreen = screen;
-      if (screen === 3 && currentBus) updateRouteDisplay();
+    let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+
+    function saveFavorites() {
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+    }
+
+    function isFavorite(busNum) {
+      return favorites.includes(busNum);
+    }
+
+    function toggleFavorite(busNum) {
+      if (isFavorite(busNum)) {
+        favorites = favorites.filter((b) => b !== busNum);
+      } else {
+        favorites.push(busNum);
+      }
+      saveFavorites();
+      renderFavorites();
+      renderBusList();
+    }
+
+    function renderBusList() {
+      const busListDiv = document.getElementById("busList");
+      busListDiv.innerHTML = "";
+      const searchValue = document.getElementById("search").value.trim();
+      const filteredBusNums = Object.keys(buses).filter((num) =>
+        num.includes(searchValue)
+      );
+      filteredBusNums.forEach((num) => {
+        const busItem = document.createElement("div");
+        busItem.className = "bus-item";
+        busItem.textContent = `버스번호: ${num}`;
+        // 즐겨찾기 버튼
+        const favBtn = document.createElement("button");
+        favBtn.textContent = isFavorite(num) ? "★ 즐겨찾기 해제" : "☆ 즐겨찾기";
+        favBtn.style.marginLeft = "10px";
+        favBtn.onclick = (e) => {
+          e.stopPropagation();
+          toggleFavorite(num);
+        };
+        busItem.appendChild(favBtn);
+
+        busItem.onclick = () => showRoute(num);
+        busListDiv.appendChild(busItem);
+      });
+    }
+
+    function renderFavorites() {
+      const favDiv = document.getElementById("favorites");
+      favDiv.innerHTML = "<h3>즐겨찾기</h3>";
+      if (favorites.length === 0) {
+        favDiv.innerHTML += "<p>즐겨찾기가 없습니다.</p>";
+        return;
+      }
+      favorites.forEach((num) => {
+        const favItem = document.createElement("div");
+        favItem.className = "bus-item";
+        favItem.textContent = `버스번호: ${num}`;
+        favItem.onclick = () => showRoute(num);
+        favDiv.appendChild(favItem);
+      });
     }
 
     function filterBuses() {
-      const query = document.getElementById("search").value;
-      const list = document.getElementById("busList");
-      list.innerHTML = "";
-      let count = 0;
-      for (const busNum in buses) {
-        if (busNum.includes(query)) {
-          if (count < 5) {
-            const div = document.createElement("div");
-            div.className = "bus-item";
-            div.textContent = busNum + "번";
-            div.onclick = () => showRoute(busNum);
-            list.appendChild(div);
-            count++;
-          }
-        }
-      }
+      renderBusList();
     }
 
     function showRoute(busNum) {
-      currentBus = busNum;
-      if (!busPositions[busNum]) {
-        const totalStops = buses[busNum].length;
-        const visibleCount = Math.max(1, Math.floor(totalStops / 3));
-        const step = Math.floor(totalStops / visibleCount);
-        busPositions[busNum] = Array.from({ length: visibleCount }, (_, i) => Math.min(step * i + Math.floor(Math.random() * 2), totalStops - 1));
-        busPassengers[busNum] = Array.from({ length: visibleCount }, () => 2 + Math.floor(Math.random() * 14));
-      }
+      const routeDiv = document.getElementById("routeDisplay");
+      routeDiv.innerHTML = `<h3>버스 ${busNum} 노선</h3>`;
+      buses[busNum].forEach((station) => {
+        const stationDiv = document.createElement("div");
+        stationDiv.className = "station";
+        stationDiv.textContent = station;
+        routeDiv.appendChild(stationDiv);
+      });
       goToScreen(3);
     }
 
-    function getStatusText(count) {
-      if (count < 4) return "쾌적";
-      if (count < 12) return "보통";
-      return "혼잡";
+    function goToScreen(num) {
+      document.querySelectorAll(".screen").forEach((screen) => {
+        screen.classList.remove("active");
+      });
+      document.getElementById(`screen${num}`).classList.add("active");
     }
 
-    function updateRouteDisplay() {
-      const routeDiv = document.getElementById("routeDisplay");
-      routeDiv.innerHTML = "";
-      const stops = buses[currentBus];
-      const positions = busPositions[currentBus];
-      const passengers = busPassengers[currentBus];
-
-      for (let i = 0; i < stops.length; i++) {
-        const div = document.createElement("div");
-        div.className = "station";
-        div.textContent = stops[i];
-        const index = positions.indexOf(i);
-        if (index !== -1) {
-          div.classList.add("highlight");
-          const status = document.createElement("div");
-          status.className = "status";
-          status.textContent = `탑승 인원: ${passengers[index]}명 (${getStatusText(passengers[index])})`;
-          div.appendChild(status);
-        }
-        routeDiv.appendChild(div);
-      }
-    }
-
-    setInterval(() => {
-      for (let busNum in busPositions) {
-        const totalStops = buses[busNum].length;
-        busPositions[busNum] = busPositions[busNum].map(pos => (pos + 1) % totalStops);
-        busPassengers[busNum] = busPassengers[busNum].map(p => Math.max(0, Math.min(30, p + (Math.floor(Math.random() * 9) - 4))));
-      }
-      if (currentBus && currentScreen === 3) updateRouteDisplay();
-    }, 60000);
+    // 초기 렌더링
+    renderBusList();
+    renderFavorites();
   </script>
 </body>
 </html>
